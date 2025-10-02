@@ -1,0 +1,30 @@
+# Core Framework
+streamlit>=1.28.0
+langchain>=0.1.0
+langchain-openai>=0.0.5
+langchain-community>=0.0.10
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0,<2.0.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.17.0
+
+# Statistical Analysis
+# Note: Python 3.12 compatibility - using versions compatible with Python 3.12
+scipy>=1.11.1
+scikit-learn>=1.3.0
+
+# Utilities
+python-dotenv>=1.0.0
+
+# Optional: For better CSV handling
+chardet>=5.2.0
+openpyxl>=3.1.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0

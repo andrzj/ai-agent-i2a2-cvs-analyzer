@@ -1,0 +1,13 @@
+[browser]
+gatherUsageStats = false
+serverAddress = "localhost"
+serverPort = 8501
+
+[server]
+headless = true
+port = 8501
+address = "0.0.0.0"
+enableCORS = false
+enableXsrfProtection = false
+maxUploadSize = 200
+enableXsrfProtection = true
