@@ -809,6 +809,18 @@ def main():
         O agente lembra suas perguntas anteriores e constrói sobre análises anteriores!
         """)
         
+        # Show example
+        with st.expander("📖 Exemplos de Perguntas"):
+            st.markdown("""
+            - "Quais são os tipos de dados de cada coluna?"
+            - "Mostre-me a distribuição da coluna idade"
+            - "Existem valores atípicos nos dados de salário?"
+            - "Qual é a correlação entre idade e renda?"
+            - "Você pode identificar padrões temporais nos dados de vendas?"
+            - "Quais variáveis influenciam mais a rotatividade de clientes?"
+            - "Crie um gráfico de dispersão de preço vs quantidade"
+            """)
+        
         # Security notice
         with st.expander("🔒 Segurança e Privacidade"):
             st.markdown("""
@@ -825,18 +837,6 @@ def main():
             - Revogue chaves antigas no [Painel OpenAI](https://platform.openai.com/api-keys)
             - Use chaves com limites de gastos definidos
             - Monitore seu uso de API regularmente
-            """)
-        
-        # Show example
-        with st.expander("📖 Exemplos de Perguntas"):
-            st.markdown("""
-            - "Quais são os tipos de dados de cada coluna?"
-            - "Mostre-me a distribuição da coluna idade"
-            - "Existem valores atípicos nos dados de salário?"
-            - "Qual é a correlação entre idade e renda?"
-            - "Você pode identificar padrões temporais nos dados de vendas?"
-            - "Quais variáveis influenciam mais a rotatividade de clientes?"
-            - "Crie um gráfico de dispersão de preço vs quantidade"
             """)
     
     else:
