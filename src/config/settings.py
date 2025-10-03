@@ -22,7 +22,7 @@ class Settings:
     OPENAI_API_KEY: Final[str] = os.getenv("OPENAI_API_KEY", "")
     ANTHROPIC_API_KEY: Final[str] = os.getenv("ANTHROPIC_API_KEY", "")
     
-    LLM_MODEL: Final[str] = os.getenv("LLM_MODEL", "gpt-4o-mini")
+    LLM_MODEL: Final[str] = os.getenv("LLM_MODEL", "gpt-4.1-mini")
     LLM_TEMPERATURE: Final[float] = float(os.getenv("LLM_TEMPERATURE", "0"))
     
     # ============================================================

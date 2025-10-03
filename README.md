@@ -148,7 +148,7 @@ csv-analyzer-agent/
 ### 🤖 IA/Agente
 - LangChain 0.1.0+ Framework de agente
 - LangChain-OpenAI 0.0.5+ Integração LLM
-- OpenAI gpt-4o-mini Compreensão de intenção
+- OpenAI gpt-4.1-mini Compreensão de intenção
 
 ### 📊 Processamento De Dados
 - Pandas 2.0.0+ Manipulação de DataFrames e CSV
@@ -172,6 +172,7 @@ csv-analyzer-agent/
 O agente tem acesso a 19 ferramentas especializadas:
 
 **📊 Descrição de Dados (5 ferramentas)**
+
 1. `get_data_types` - Detecção de tipo de dados
 2. `get_distribution_stats` - Estatísticas de distribuição
 3. `get_range_info` - Informações de intervalo
@@ -179,21 +180,25 @@ O agente tem acesso a 19 ferramentas especializadas:
 5. `calculate_variability` - Cálculos de variabilidade
 
 **📈 Análise de Padrões (3 ferramentas)**
+
 6. `detect_temporal_patterns` - Detecção de padrões temporais
 7. `get_frequency_analysis` - Análise de frequência
 8. `detect_clusters` - Detecção de clusters
 
 **⚠️ Detecção de Outliers (3 ferramentas)**
+
 9. `detect_outliers_iqr` - Detecção de outliers baseada em IQR
 10. `detect_outliers_zscore` - Detecção de outliers por Z-score
 11. `analyze_outlier_impact` - Análise de impacto de outliers
 
 **🔗 Análise de Relacionamentos (3 ferramentas)**
+
 12. `calculate_correlation` - Cálculo de correlação
 13. `analyze_variable_relationships` - Análise de relacionamento entre variáveis
 14. `identify_influential_variables` - Identificação de variáveis influentes
 
 **📉 Visualização (5 ferramentas)**
+
 15. `create_histogram` - Histogramas
 16. `create_scatter_plot` - Gráficos de dispersão
 17. `create_correlation_heatmap` - Mapas de calor de correlação
@@ -261,7 +266,7 @@ OPENAI_API_KEY=sk-your-key-here
 Edite o arquivo `.env` para personalizar:
 
 - `OPENAI_API_KEY`: API key do modelo LLM (opcional - pode fornecer via UI)
-- `LLM_MODEL`: Escolha seu modelo LLM (padrão: gpt-4o-mini)
+- `LLM_MODEL`: Escolha seu modelo LLM (padrão: gpt-4.1-mini)
 - `MAX_FILE_SIZE_MB`: Tamanho máximo do arquivo CSV (padrão: 200)
 - `MAX_CONVERSATION_HISTORY`: Comprimento do histórico de chat (padrão: 50)
 

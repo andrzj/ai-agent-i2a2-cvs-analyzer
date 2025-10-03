@@ -16,7 +16,7 @@
 │                    (src/agent/csv_agent.py)                       │
 │                                                                   │
 │  ┌───────────────────────────────────────────────────────────┐    │
-│  │  LLM (gpt-4o-mini)                                        │    │
+│  │  LLM (gpt-4.1-mini)                                       │    │
 │  │  • Compreende a intenção do usuário                       │    │
 │  │  • Seleciona ferramentas apropriadas                      │    │
 │  │  • Gera respostas em linguagem natural                    │    │
@@ -201,7 +201,7 @@ Frontend:
 IA/Agente:
 • LangChain 0.1.0+ (Framework de agente)
 • LangChain-OpenAI 0.0.5+ (Integração LLM)
-• OpenAI gpt-4o-mini (Compreensão de intenção)
+• OpenAI gpt-4.1-mini (Compreensão de intenção)
 
 Processamento de Dados:
 • Pandas 2.0.0+ (DataFrames, manipulação CSV)
