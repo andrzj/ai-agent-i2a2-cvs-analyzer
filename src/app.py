@@ -78,11 +78,227 @@ def initialize_session_state():
     
     if 'visualizations' not in st.session_state:
         st.session_state.visualizations = []
+    
+    # API Key Management
+    if 'user_api_key' not in st.session_state:
+        st.session_state.user_api_key = None
+        logger.debug("Initialized user_api_key state to None")
+    
+    if 'api_key_valid' not in st.session_state:
+        st.session_state.api_key_valid = False
+        logger.debug("Initialized api_key_valid state to False")
+    
+    if 'api_key_source' not in st.session_state:
+        # Can be: 'configured', 'user', or 'none'
+        st.session_state.api_key_source = 'configured' if Settings.has_configured_api_key() else 'none'
+        logger.debug(f"Initialized api_key_source state to {st.session_state.api_key_source}")
+    
+    if 'show_api_key_input' not in st.session_state:
+        st.session_state.show_api_key_input = not Settings.has_configured_api_key()
+        logger.debug(f"Initialized show_api_key_input state to {st.session_state.show_api_key_input}")
 
 
 # ============================================================
 # Helper Functions
 # ============================================================
+
+def get_active_api_key() -> Optional[str]:
+    """
+    Get the currently active API key.
+    Priority: user-provided > configured in settings
+    
+    Returns:
+        Active API key or None
+    """
+    if st.session_state.user_api_key and st.session_state.api_key_valid:
+        return st.session_state.user_api_key
+    elif Settings.has_configured_api_key():
+        return Settings.OPENAI_API_KEY or Settings.ANTHROPIC_API_KEY
+    return None
+
+
+def validate_and_store_api_key(api_key: str) -> tuple[bool, Optional[str]]:
+    """
+    Validate and store user-provided API key.
+    
+    Args:
+        api_key: API key to validate
+        
+    Returns:
+        Tuple of (success, error_message)
+    """
+    # Format validation
+    is_valid, error_msg = Settings.validate_api_key_format(api_key)
+    if not is_valid:
+        logger.warning(f"API key format validation failed: {error_msg}")
+        return False, error_msg
+    
+    # Store in session state
+    st.session_state.user_api_key = api_key
+    st.session_state.api_key_valid = True
+    st.session_state.api_key_source = 'user'
+    
+    logger.info(f"User API key validated and stored: {Settings.mask_api_key(api_key)}")
+    
+    # Reinitialize agent if dataset is loaded
+    if st.session_state.df is not None:
+        try:
+            logger.info("Reinitializing agent with new API key")
+            agent = CSVAgent(api_key=api_key)
+            agent.load_dataframe(st.session_state.df, st.session_state.dataset_info)
+            st.session_state.agent = agent
+            logger.info("Agent successfully reinitialized with new API key")
+        except Exception as e:
+            logger.error(f"Failed to reinitialize agent with new API key: {str(e)}")
+            return False, f"Failed to initialize agent with provided key: {str(e)}"
+    
+    return True, None
+
+
+def revert_to_project_key():
+    """Revert to using the project-configured API key."""
+    if not Settings.has_configured_api_key():
+        logger.warning("Attempted to revert to project key but none is configured")
+        return False, "No project API key configured"
+    
+    st.session_state.user_api_key = None
+    st.session_state.api_key_valid = False
+    st.session_state.api_key_source = 'configured'
+    
+    logger.info("Reverted to project-configured API key")
+    
+    # Reinitialize agent if dataset is loaded
+    if st.session_state.df is not None:
+        try:
+            logger.info("Reinitializing agent with project API key")
+            agent = CSVAgent()
+            agent.load_dataframe(st.session_state.df, st.session_state.dataset_info)
+            st.session_state.agent = agent
+            logger.info("Agent successfully reinitialized with project API key")
+        except Exception as e:
+            logger.error(f"Failed to reinitialize agent: {str(e)}")
+            return False, f"Failed to initialize agent: {str(e)}"
+    
+    return True, None
+
+
+def display_api_key_section():
+    """Display API key management section in sidebar."""
+    st.sidebar.markdown("### 🔑 API Key Management")
+    
+    # Scenario A: No key configured
+    if st.session_state.api_key_source == 'none':
+        st.sidebar.warning("⚠️ OpenAI API Key Required")
+        st.sidebar.info("The OpenAI API key is not configured. Please provide your key to use the agent.")
+        
+        with st.sidebar.expander("🔓 Provide Your API Key", expanded=True):
+            st.markdown("""
+            **Your key is stored only for this session and never saved to disk.**
+            
+            [Get your API key here →](https://platform.openai.com/api-keys)
+            """)
+            
+            api_key_input = st.text_input(
+                "OpenAI API Key",
+                type="password",
+                placeholder="sk-...",
+                help="Enter your OpenAI API key. It will only be stored in memory for this session.",
+                key="api_key_input"
+            )
+            
+            if st.button("✅ Validate & Use Key", key="validate_key_btn", type="primary"):
+                if api_key_input:
+                    with st.spinner("Validating API key..."):
+                        success, error = validate_and_store_api_key(api_key_input)
+                        if success:
+                            st.success("✅ API key validated successfully!")
+                            st.session_state.show_api_key_input = False
+                            st.rerun()
+                        else:
+                            st.error(f"❌ {error}")
+                else:
+                    st.error("Please enter an API key")
+    
+    # Scenario B: Key already configured (project or user)
+    else:
+        if st.session_state.api_key_source == 'configured':
+            st.sidebar.success("✅ Using Project API Key")
+            masked_key = Settings.mask_api_key(Settings.OPENAI_API_KEY or Settings.ANTHROPIC_API_KEY or "")
+            st.sidebar.caption(f"Key: {masked_key}")
+        elif st.session_state.api_key_source == 'user':
+            st.sidebar.success("✅ Using Your API Key")
+            masked_key = Settings.mask_api_key(st.session_state.user_api_key or "")
+            st.sidebar.caption(f"Key: {masked_key}")
+        
+        # Always show option to provide own key or revert
+        with st.sidebar.expander("🔄 Change API Key", expanded=False):
+            if st.session_state.api_key_source == 'configured':
+                st.markdown("""
+                **Use Your Own API Key (Optional)**
+                
+                You can provide your own API key to override the project's key.
+                
+                [Get your API key here →](https://platform.openai.com/api-keys)
+                """)
+                
+                api_key_input = st.text_input(
+                    "Your OpenAI API Key",
+                    type="password",
+                    placeholder="sk-...",
+                    help="Your key will only be stored in memory for this session.",
+                    key="api_key_override_input"
+                )
+                
+                if st.button("✅ Use My Key", key="override_key_btn", type="primary"):
+                    if api_key_input:
+                        with st.spinner("Validating API key..."):
+                            success, error = validate_and_store_api_key(api_key_input)
+                            if success:
+                                st.success("✅ Now using your API key!")
+                                st.rerun()
+                            else:
+                                st.error(f"❌ {error}")
+                    else:
+                        st.error("Please enter an API key")
+            
+            elif st.session_state.api_key_source == 'user':
+                st.markdown("**You are currently using your own API key.**")
+                
+                if Settings.has_configured_api_key():
+                    if st.button("↩️ Revert to Project Key", key="revert_key_btn"):
+                        with st.spinner("Reverting to project key..."):
+                            success, error = revert_to_project_key()
+                            if success:
+                                st.success("✅ Reverted to project API key!")
+                                st.rerun()
+                            else:
+                                st.error(f"❌ {error}")
+                
+                st.markdown("---")
+                st.markdown("**Provide a Different API Key:**")
+                
+                new_api_key_input = st.text_input(
+                    "New OpenAI API Key",
+                    type="password",
+                    placeholder="sk-...",
+                    help="Replace your current API key with a new one.",
+                    key="api_key_change_input"
+                )
+                
+                if st.button("✅ Update Key", key="update_key_btn", type="primary"):
+                    if new_api_key_input:
+                        with st.spinner("Validating new API key..."):
+                            success, error = validate_and_store_api_key(new_api_key_input)
+                            if success:
+                                st.success("✅ API key updated successfully!")
+                                st.rerun()
+                            else:
+                                st.error(f"❌ {error}")
+                    else:
+                        st.error("Please enter an API key")
+    
+    st.sidebar.markdown("---")
+
 
 def load_csv_file(uploaded_file) -> Optional[pd.DataFrame]:
     """
@@ -116,9 +332,13 @@ def load_csv_file(uploaded_file) -> Optional[pd.DataFrame]:
         st.session_state.file_uploaded = True
         logger.info("Stored dataframe and file stats in session state")
         
-        # Initialize agent
+        # Initialize agent with active API key
         logger.info("Initializing CSVAgent")
-        agent = CSVAgent()
+        api_key = get_active_api_key()
+        if not api_key:
+            raise ValueError("No valid API key available. Please provide an API key.")
+        
+        agent = CSVAgent(api_key=api_key)
         agent.load_dataframe(df, file_stats)
         st.session_state.agent = agent
         logger.info("Agent initialized and stored in session state")
@@ -499,11 +719,18 @@ def main():
     with st.sidebar:
         st.markdown("## 📁 Upload de Arquivo CSV")
         
-        uploaded_file = st.file_uploader(
-            "Escolha um arquivo CSV",
-            type=['csv'],
-            help=f"Tamanho máximo do arquivo: {Settings.MAX_FILE_SIZE_MB}MB"
-        )
+        # Check if API key is available before allowing file upload
+        api_key_available = get_active_api_key() is not None
+        
+        if not api_key_available:
+            st.info("⚠️ Please provide an API key below before uploading a CSV file.")
+            uploaded_file = None
+        else:
+            uploaded_file = st.file_uploader(
+                "Escolha um arquivo CSV",
+                type=['csv'],
+                help=f"Tamanho máximo do arquivo: {Settings.MAX_FILE_SIZE_MB}MB"
+            )
         
         if uploaded_file is not None:
             logger.info(f"File uploaded: {uploaded_file.name}, size: {uploaded_file.size} bytes")
@@ -553,14 +780,20 @@ def main():
                 st.session_state.messages = []
                 st.session_state.visualizations = []
                 st.rerun()
+        
+        # API Key Management Section (Bottom of sidebar)
+        display_api_key_section()
     
     # ========================================
     # Main Chat Area
     # ========================================
     
     if not st.session_state.file_uploaded:
-        # Show welcome message
-        st.info("👈 Por favor, faça upload de um arquivo CSV para começar!")
+        # Show welcome message with API key status
+        if not get_active_api_key():
+            st.warning("⚠️ Please provide an OpenAI API key in the sidebar to get started!")
+        else:
+            st.info("👈 Por favor, faça upload de um arquivo CSV para começar!")
         
         st.markdown("""
         ### O que este agente pode fazer?
@@ -575,6 +808,24 @@ def main():
         
         O agente lembra suas perguntas anteriores e constrói sobre análises anteriores!
         """)
+        
+        # Security notice
+        with st.expander("🔒 Segurança e Privacidade"):
+            st.markdown("""
+            **Como protegemos sua chave API:**
+            
+            - ✅ Armazenada apenas na memória da sessão (não em disco)
+            - ✅ Nunca registrada em logs (apenas primeiros/últimos caracteres)
+            - ✅ Automaticamente limpa ao fechar o navegador
+            - ✅ Não compartilhada com terceiros
+            - ✅ Use type="password" para mascarar a entrada
+            
+            **Melhores práticas:**
+            - Não compartilhe sua chave API com ninguém
+            - Revogue chaves antigas no [OpenAI Dashboard](https://platform.openai.com/api-keys)
+            - Use chaves com limites de gastos definidos
+            - Monitore seu uso de API regularmente
+            """)
         
         # Show example
         with st.expander("📖 Exemplos de Perguntas"):

@@ -70,13 +70,14 @@ class CSVAgent:
     processing raw CSV data.
     """
     
-    def __init__(self, llm_model: Optional[str] = None, temperature: Optional[float] = None):
+    def __init__(self, llm_model: Optional[str] = None, temperature: Optional[float] = None, api_key: Optional[str] = None):
         """
         Initialize the CSV Agent.
         
         Args:
             llm_model: LLM model name (uses Settings default if None)
             temperature: LLM temperature (uses Settings default if None)
+            api_key: OpenAI API key (uses Settings default if None)
         """
         self.settings = Settings
         self.data_processor = DataProcessor()
@@ -86,10 +87,16 @@ class CSVAgent:
         self.llm_model = llm_model or self.settings.LLM_MODEL
         self.temperature = temperature if temperature is not None else self.settings.LLM_TEMPERATURE
         
+        # Use provided API key or fall back to settings
+        self.api_key = api_key or self.settings.OPENAI_API_KEY
+        
+        if not self.api_key:
+            raise ValueError("OpenAI API key is required. Please provide it via parameter or configure in settings.")
+        
         self.llm = ChatOpenAI(
             model=self.llm_model,
             temperature=self.temperature,
-            openai_api_key=self.settings.OPENAI_API_KEY
+            openai_api_key=self.api_key
         )
         
         # DataFrame and agent will be set when data is loaded

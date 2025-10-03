@@ -5,7 +5,8 @@ This module contains all configuration constants and settings used throughout th
 """
 
 import os
-from typing import Final, List
+import re
+from typing import Final, List, Optional
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -169,14 +170,63 @@ Sempre responda em Português Brasileiro
     ]
     
     @classmethod
+    def has_configured_api_key(cls) -> bool:
+        """
+        Check if an API key is configured in environment or .env file.
+        
+        Returns:
+            True if OPENAI_API_KEY or ANTHROPIC_API_KEY is configured, False otherwise
+        """
+        return bool(cls.OPENAI_API_KEY or cls.ANTHROPIC_API_KEY)
+    
+    @classmethod
+    def validate_api_key_format(cls, api_key: str) -> tuple[bool, Optional[str]]:
+        """
+        Validate the format of an OpenAI API key.
+        
+        Args:
+            api_key: API key string to validate
+            
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        if not api_key or not api_key.strip():
+            return False, "API key cannot be empty"
+        
+        api_key = api_key.strip()
+        
+        # OpenAI keys start with 'sk-' or 'sk-proj-' followed by alphanumeric characters
+        if not re.match(r'^sk-[a-zA-Z0-9_-]{32,}$', api_key):
+            return False, "Invalid API key format. OpenAI keys start with 'sk-' followed by at least 32 alphanumeric characters"
+        
+        return True, None
+    
+    @classmethod
+    def mask_api_key(cls, api_key: str) -> str:
+        """
+        Mask an API key for safe display/logging.
+        
+        Args:
+            api_key: API key to mask
+            
+        Returns:
+            Masked API key showing only first 7 and last 4 characters
+        """
+        if not api_key or len(api_key) < 11:
+            return "***"
+        return f"{api_key[:7]}...{api_key[-4:]}"
+    
+    @classmethod
     def validate(cls) -> bool:
-        """Validate that required settings are properly configured."""
-        if not cls.OPENAI_API_KEY and not cls.ANTHROPIC_API_KEY:
-            raise ValueError(
-                "No API key configured. Please set OPENAI_API_KEY or ANTHROPIC_API_KEY in .env file"
-            )
-        return True
+        """
+        Validate that required settings are properly configured.
+        Note: This is now optional - API key can be provided at runtime.
+        
+        Returns:
+            True if validation passes, False otherwise
+        """
+        # Don't raise an error - just return False if no key is configured
+        return cls.has_configured_api_key()
 
 
-# Validate settings on import
-Settings.validate()
+# Note: We no longer validate on import to allow runtime API key provision

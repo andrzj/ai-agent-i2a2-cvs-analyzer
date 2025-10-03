@@ -236,12 +236,31 @@ O agente tem acesso a 19 ferramentas especializadas:
 
 6. **Exportar Análise:** O agente se lembra de todas as análises - você pode perguntar "resuma o que descobrimos até agora"
 
+## 🔑 Configuração da Chave de API
+
+A aplicação suporta **duas maneiras** de fornecer sua chave de API OpenAI:
+
+#### Opção 1: Variável de Ambiente (Recomendado para Desenvolvimento)
+Edite o arquivo `.env`:
+```bash
+OPENAI_API_KEY=sk-your-key-here
+```
+
+#### Opção 2: Entrada em Tempo de Execução (Fácil de Usar)
+
+- **Não é necessário arquivo .env!**
+- Forneça sua chave de API diretamente na interface do aplicativo
+- A chave é armazenada apenas para a sessão atual (segura e temporária)
+- Perfeito para:
+  - Demonstrações rápidas
+  - Ambientes compartilhados
+  - Usuários sem acesso à configuração do ambiente
 
 ## Configuração ⚙️
 
 Edite o arquivo `.env` para personalizar:
 
-- `OPENAI_API_KEY`: API key do modelo LLM
+- `OPENAI_API_KEY`: API key do modelo LLM (opcional - pode fornecer via UI)
 - `LLM_MODEL`: Escolha seu modelo LLM (padrão: gpt-4o-mini)
 - `MAX_FILE_SIZE_MB`: Tamanho máximo do arquivo CSV (padrão: 200)
 - `MAX_CONVERSATION_HISTORY`: Comprimento do histórico de chat (padrão: 50)
